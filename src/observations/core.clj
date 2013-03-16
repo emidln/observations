@@ -100,16 +100,6 @@
        (dblogic/db-rel ~(with-meta rel {:doc docstr})
                        ~@elements))))
 
-(defn keyword-to-rel [k]
-  (cond
-   (keyword? k)
-   (let [v (ns-resolve (find-ns 'threatbrain.engine) (symbol (name k)))]
-     (if v
-       (var-get v)
-       (error "Unrecognized observation type " k)))
-
-   :else k))
-
 (defn observe [rel & args]
   (apply vector rel args))
 

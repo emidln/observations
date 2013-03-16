@@ -1,5 +1,6 @@
 (ns observations.schema
-    (:use observations.dbutils))
+  (:use observations.core)
+  (:use observations.dbutils))
 
 ;; should be defmulti
 (defn- arg-as-coldef [arg]
@@ -39,7 +40,7 @@
   (let [tname (name (relation obs))
         time-model (:time-model (options obs))]
     (print
-     (as-comment (:doc (meta (ns-resolve (find-ns 'threatbrain.engine) (relation obs))))))
+     (as-comment (:doc (meta  (relation obs)))))
     (print-create-table tname (concat (cond
                                         (= time-model :sample)
                                         [["sample" "VARCHAR" "NOT NULL"]]
@@ -64,25 +65,8 @@
           (let [iname (str (name (relation obs)) "-" arg "-idx")]
             (print-create-index iname tname [arg])))))))
 
-(defn print-observation-schema []
-  (print-create-table "observation_types"
-                      [["name" "VARCHAR PRIMARY KEY"]
-                       ["doc" "VARCHAR"]
-                       ["args" "VARCHAR[]"]
-                       ["argtypes" "VARCHAR[]"]
-                       ["options" "VARCHAR"]
-                       ]
-                      :if-not-exists true)
-  (doseq [o (remove #(:omit-from-schema (:options %1)) (vals @threatbrain.engine/observation-map))]
+(defn print-observation-schema [observations]
+  (doseq [o (remove #(:omit-from-schema (:options %1)) observations)]
     (print-observation-table o)
-    (print "\n")
-    (print-update-or-insert "observation_types"
-                            {"name" (name (relation o))
-                             "doc" (:doc (meta (ns-resolve (find-ns 'threatbrain.engine) (relation o))))
-                             "args" (map as-id (args o))
-                             "argtypes" (map #(or (:tag (meta %)) "String") (args o))
-                             "options" (json/json-str (options o))
-                             }
-                            {"name" (name (relation o))})
     (print "\n\n")
     ))
